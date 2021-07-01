@@ -1,0 +1,40 @@
+name: Build Storybook
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  Build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v2
+        with:
+          repository: 250/Storybook
+          path: sb
+
+      - name: Build Storybook
+        run: yarn && yarn build-storybook
+
+      - name: Link Storybook
+        run: cp -val storybook-static/* sb
+
+      - name: Cache dependencies
+        id: composer-cache
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: php-${{ hashFiles('composer.lock') }}
+
+      - name: Push site
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -A . &&
+          git commit -m "Built from $GITHUB_SHA." &&
+          [[ -r CNAME && -r index.html ]] && git push
+        working-directory: sb
